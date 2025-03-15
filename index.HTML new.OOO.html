@@ -1,0 +1,206 @@
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Meme Generator 2.0</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background: #1a1a1a;
+            color: #fff;
+            margin: 0;
+            padding: 10px;
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        h1 {
+            font-size: clamp(30px, 8vw, 50px);
+            color: #00ffcc;
+            text-shadow: 0 0 10px #00ffcc, 0 0 20px #ff007a;
+            margin-bottom: 10px;
+        }
+        .container {
+            max-width: 100%;
+            width: 100%;
+            margin: 0 auto;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
+            box-sizing: border-box;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        input[type="text"], select, input[type="color"], input[type="range"] {
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+            padding: 8px;
+            border: 2px solid #ff007a;
+            border-radius: 5px;
+            background: #333;
+            color: #fff;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input[type="file"] {
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+            padding: 8px;
+            background: #333;
+            border-radius: 5px;
+            color: #fff;
+        }
+        button {
+            padding: 10px 20px;
+            background: #ff007a;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            margin: 10px auto;
+            width: 150px;
+        }
+        button:hover {
+            background: #00ffcc;
+            color: #000;
+        }
+        canvas {
+            width: 100%;
+            max-width: 600px;
+            margin: 10px auto 0;
+            display: block;
+            border: 2px solid #00ffcc;
+            background: #000;
+            position: sticky;
+            top: 10px;
+            z-index: 1;
+        }
+        #footer {
+            margin-top: 20px;
+            font-size: clamp(12px, 3vw, 14px);
+            color: #ff007a;
+            font-style: italic;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 8px;
+            }
+            input[type="text"], select, input[type="color"], input[type="range"], input[type="file"] {
+                padding: 6px;
+                font-size: 14px;
+            }
+            button {
+                padding: 8px 16px;
+                width: 120px;
+            }
+            canvas {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>AI Meme Generator 2.0</h1>
+    <div class="container">
+        <div class="controls">
+            <input type="file" id="upload" accept="image/*">
+            <input type="text" id="topText" placeholder="Top Text" oninput="updateMeme()">
+            <input type="text" id="bottomText" placeholder="Bottom Text" oninput="updateMeme()">
+            <select id="fontSelect" onchange="updateMeme()">
+                <option value="Impact">Impact</option>
+                <option value="Arial">Arial</option>
+                <option value="Comic Sans MS">Comic Sans</option>
+                <option value="Times New Roman">Times New Roman</option>
+            </select>
+            <input type="color" id="textColor" value="#ffffff" onchange="updateMeme()">
+            <input type="color" id="strokeColor" value="#000000" onchange="updateMeme()">
+            <input type="range" id="topTextPos" min="0" max="100" value="10" oninput="updateMeme()" title="Top Text Position">
+            <input type="range" id="bottomTextPos" min="0" max="100" value="90" oninput="updateMeme()" title="Bottom Text Position">
+            <button onclick="downloadMeme()">Download Meme</button>
+        </div>
+        <canvas id="memeCanvas"></canvas>
+    </div>
+    <div id="footer">“Indeed, with hardship comes ease.” (Quran 94:6)</div>
+
+    <script>
+        const canvas = document.getElementById('memeCanvas');
+        const ctx = canvas.getContext('2d');
+        let image = new Image();
+
+        // Load image
+        document.getElementById('upload').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    image.src = e.target.result;
+                    image.onload = function() {
+                        canvas.width = image.width;
+                        canvas.height = image.height;
+                        updateMeme();
+                    };
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Update meme live
+        function updateMeme() {
+            if (!image.src || image.src === '') return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+            const topText = document.getElementById('topText').value.toUpperCase();
+            const bottomText = document.getElementById('bottomText').value.toUpperCase();
+            const font = document.getElementById('fontSelect').value;
+            const textColor = document.getElementById('textColor').value;
+            const strokeColor = document.getElementById('strokeColor').value;
+            const topTextPos = document.getElementById('topTextPos').value;
+            const bottomTextPos = document.getElementById('bottomTextPos').value;
+
+            const fontSize = Math.min(canvas.width / 10, 50);
+            ctx.font = `bold ${fontSize}px ${font}`;
+            ctx.fillStyle = textColor;
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = 4;
+            ctx.textAlign = 'center';
+
+            const topY = (topTextPos / 100) * canvas.height;
+            const bottomY = (bottomTextPos / 100) * canvas.height;
+
+            if (topText) {
+                ctx.strokeText(topText, canvas.width / 2, topY);
+                ctx.fillText(topText, canvas.width / 2, topY);
+            }
+
+            if (bottomText) {
+                ctx.strokeText(bottomText, canvas.width / 2, bottomY);
+                ctx.fillText(bottomText, canvas.width / 2, bottomY);
+            }
+        }
+
+        // Download meme
+        function downloadMeme() {
+            const link = document.createElement('a');
+            link.download = 'meme.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>
